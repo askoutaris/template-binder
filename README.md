@@ -1,6 +1,10 @@
 # template-binder
 A C# angular like text template binder
 
+
+# usage
+
+```
 var pipeTypes = new Type[] {
   typeof(BooleanTextPipe),
   typeof(DatePipe),
@@ -31,3 +35,4 @@ var parameters = new Parameter[] {
 };
 
 var text = binder.Bind(parameters);
+```
