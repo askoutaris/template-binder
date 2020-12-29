@@ -5,6 +5,7 @@ A C# angular like text template binder
 # usage
 
 ```
+// you can create your own pipes and add them here
 var pipeTypes = new Type[] {
   typeof(BooleanTextPipe),
   typeof(DatePipe),
