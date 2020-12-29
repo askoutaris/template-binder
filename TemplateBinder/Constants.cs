@@ -13,7 +13,7 @@
 		public static class Regex
 		{
 			public static readonly System.Text.RegularExpressions.Regex Placeholder = new System.Text.RegularExpressions.Regex(@"(\{)(.*?)(\})");
-			public static readonly System.Text.RegularExpressions.Regex ParameterName = new System.Text.RegularExpressions.Regex(@"[^{][^|]*");
+			public static readonly System.Text.RegularExpressions.Regex ParameterName = new System.Text.RegularExpressions.Regex(@"[^{][^(||})]*");
 			public static readonly System.Text.RegularExpressions.Regex PipeName = new System.Text.RegularExpressions.Regex(@"(?<=\|)(.*?)(?=\:)");
 			public static readonly System.Text.RegularExpressions.Regex PipeParameters = new System.Text.RegularExpressions.Regex(@"(?<=\:)(.*)[^}]");
 		}
