@@ -1,8 +1,16 @@
 # template-binder
 A C# angular like text template binder
 
-# microsoft dependency injection
+### ASP.NET Core
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+  services.AddTemplateBinder() // you can create your own pipes and add them here
+}
 ```
+
+### Microsoft Dependency Injection
+```csharp
 // setup our DI
 var serviceProvider = new ServiceCollection()
   .AddTemplateBinder() // you can create your own pipes and add them here
@@ -12,8 +20,8 @@ var serviceProvider = new ServiceCollection()
 var binderFactory = serviceProvider.GetService<IBinderFactory>();
 ```
 
-# simple usage
-```
+### Simple Usage
+```csharp
 // you can create your own pipes and add them here
 var pipeTypes = new Type[] {
   typeof(BooleanTextPipe),
@@ -26,8 +34,8 @@ var pipeFactory = new PipeFactoryDefault(pipeTypes);
 var binderFactory = new BinderFactoryDefault(pipeFactory);
 ```
 
-# IBinderFactory usage
-```
+### IBinderFactory Usage
+```csharp
 IBinderFactory binderFactory = GetBinderFactory();
 
 var template = @"
