@@ -1,19 +1,9 @@
 # template-binder
 A C# angular like text template binder
 
-
-# usage
-
-```
-// you can create your own pipes and add them here
-var pipeTypes = new Type[] {
-  typeof(BooleanTextPipe),
-  typeof(DatePipe),
-  typeof(DecimalPipe),
-  typeof(TextPipe),
-};
-
-var pipeFactory = new PipeFactoryDefault(pipeTypes);
+### IBinder/BinderFactory Usage
+```csharp
+IBinderFactory binderFactory = GetBinderFactory();
 
 var template = @"
   The user {FirstName} {LastName} 
@@ -23,7 +13,7 @@ var template = @"
   {IsActive|booleantext:falseValue=no,trueValue=yes},
   {IsLockedOut|booleantext:falseValue=no,trueValue=yes}";
 
-var binder = new Binder(pipeFactory, template);
+var binder = binderFactory.Create(template);
 
 var parameters = new Parameter[] {
   new Parameter.Text("FirstName", "David"),
@@ -43,4 +33,43 @@ var text = binder.Bind(parameters);
 //has account balance 1.750,45,
 //is active: yes,
 //is locked out: no
+```
+
+### ASP.NET Core
+
+In order to use TemplateBinder with ASP.Net Core you have to install <a href="https://www.nuget.org/packages/TemplateBinder.Extensions.DependencyInjection/" target="_blank">TemplateBinder.Extensions.DependencyInjection</a> nuget package
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+  services.AddTemplateBinder() // you can create your own pipes and add them here
+}
+```
+
+### Microsoft Dependency Injection
+
+In order to use TemplateBinder with Microsoft Dependency Injection you have to install <a href="https://www.nuget.org/packages/TemplateBinder.Extensions.DependencyInjection/" target="_blank">TemplateBinder.Extensions.DependencyInjection</a> nuget package
+
+```csharp
+// setup our DI
+var serviceProvider = new ServiceCollection()
+  .AddTemplateBinder() // you can create your own pipes and add them here
+  .BuildServiceProvider();
+
+// resolve IBinderFactory
+var binderFactory = serviceProvider.GetService<IBinderFactory>();
+```
+
+### Simple
+```csharp
+// you can create your own pipes and add them here
+var pipeTypes = new Type[] {
+  typeof(BooleanTextPipe),
+  typeof(DatePipe),
+  typeof(DecimalPipe),
+  typeof(TextPipe),
+};
+
+var pipeFactory = new PipeFactoryDefault(pipeTypes);
+var binderFactory = new BinderFactoryDefault(pipeFactory);
 ```
