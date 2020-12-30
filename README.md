@@ -1,40 +1,7 @@
 # template-binder
 A C# angular like text template binder
 
-### ASP.NET Core
-```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-  services.AddTemplateBinder() // you can create your own pipes and add them here
-}
-```
-
-### Microsoft Dependency Injection
-```csharp
-// setup our DI
-var serviceProvider = new ServiceCollection()
-  .AddTemplateBinder() // you can create your own pipes and add them here
-  .BuildServiceProvider();
-
-// resolve IBinderFactory
-var binderFactory = serviceProvider.GetService<IBinderFactory>();
-```
-
-### Simple Usage
-```csharp
-// you can create your own pipes and add them here
-var pipeTypes = new Type[] {
-  typeof(BooleanTextPipe),
-  typeof(DatePipe),
-  typeof(DecimalPipe),
-  typeof(TextPipe),
-};
-
-var pipeFactory = new PipeFactoryDefault(pipeTypes);
-var binderFactory = new BinderFactoryDefault(pipeFactory);
-```
-
-### IBinderFactory Usage
+### IBindeIBinderFactory Usage
 ```csharp
 IBinderFactory binderFactory = GetBinderFactory();
 
@@ -66,4 +33,37 @@ var text = binder.Bind(parameters);
 //has account balance 1.750,45,
 //is active: yes,
 //is locked out: no
+```
+
+### ASP.NET Core
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+  services.AddTemplateBinder() // you can create your own pipes and add them here
+}
+```
+
+### Microsoft Dependency Injection
+```csharp
+// setup our DI
+var serviceProvider = new ServiceCollection()
+  .AddTemplateBinder() // you can create your own pipes and add them here
+  .BuildServiceProvider();
+
+// resolve IBinderFactory
+var binderFactory = serviceProvider.GetService<IBinderFactory>();
+```
+
+### Simple
+```csharp
+// you can create your own pipes and add them here
+var pipeTypes = new Type[] {
+  typeof(BooleanTextPipe),
+  typeof(DatePipe),
+  typeof(DecimalPipe),
+  typeof(TextPipe),
+};
+
+var pipeFactory = new PipeFactoryDefault(pipeTypes);
+var binderFactory = new BinderFactoryDefault(pipeFactory);
 ```
