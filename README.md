@@ -1,7 +1,7 @@
 # template-binder
 A C# angular like text template binder
 
-### IBindeIBinderFactory Usage
+### IBinder/BinderFactory Usage
 ```csharp
 IBinderFactory binderFactory = GetBinderFactory();
 
