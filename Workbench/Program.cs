@@ -17,12 +17,12 @@ namespace Workbench
 
 		private static void DependencyInjectionExample()
 		{
-			//setup our DI
+			// setup our DI
 			var serviceProvider = new ServiceCollection()
 				.AddTemplateBinder()
 				.BuildServiceProvider();
 
-			//do the actual work here
+			// resolve IBinderFactory
 			var binderFactory = serviceProvider.GetService<IBinderFactory>();
 			BindText(binderFactory);
 		}
