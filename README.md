@@ -1,9 +1,18 @@
 # template-binder
 A C# angular like text template binder
 
+# microsoft dependency injection
+```
+// setup our DI
+var serviceProvider = new ServiceCollection()
+  .AddTemplateBinder() // you can create your own pipes and add them here
+  .BuildServiceProvider();
 
-# usage
+// resolve IBinderFactory
+var binderFactory = serviceProvider.GetService<IBinderFactory>();
+```
 
+# simple usage
 ```
 // you can create your own pipes and add them here
 var pipeTypes = new Type[] {
@@ -14,6 +23,12 @@ var pipeTypes = new Type[] {
 };
 
 var pipeFactory = new PipeFactoryDefault(pipeTypes);
+var binderFactory = new BinderFactoryDefault(pipeFactory);
+```
+
+# IBinderFactory usage
+```
+IBinderFactory binderFactory = GetBinderFactory();
 
 var template = @"
   The user {FirstName} {LastName} 
@@ -23,7 +38,7 @@ var template = @"
   {IsActive|booleantext:falseValue=no,trueValue=yes},
   {IsLockedOut|booleantext:falseValue=no,trueValue=yes}";
 
-var binder = new Binder(pipeFactory, template);
+var binder = binderFactory.Create(template);
 
 var parameters = new Parameter[] {
   new Parameter.Text("FirstName", "David"),
