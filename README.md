@@ -36,6 +36,9 @@ var text = binder.Bind(parameters);
 ```
 
 ### ASP.NET Core
+
+In order to use TemplateBinder with ASP.Net Core you have to install <a href="https://www.nuget.org/packages/TemplateBinder.Extensions.DependencyInjection/" target="_blank">TemplateBinder.Extensions.DependencyInjection</a> nuget package
+
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
@@ -44,6 +47,9 @@ public void ConfigureServices(IServiceCollection services)
 ```
 
 ### Microsoft Dependency Injection
+
+In order to use TemplateBinder with Microsoft Dependency Injection you have to install <a href="https://www.nuget.org/packages/TemplateBinder.Extensions.DependencyInjection/" target="_blank">TemplateBinder.Extensions.DependencyInjection</a> nuget package
+
 ```csharp
 // setup our DI
 var serviceProvider = new ServiceCollection()
