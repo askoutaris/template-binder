@@ -36,4 +36,11 @@ var parameters = new Parameter[] {
 };
 
 var text = binder.Bind(parameters);
+
+//The user David Parker 
+//born 1980-08-15T12:30:00.0000000 
+//has logged in 85,
+//has account balance 1.750,45,
+//is active: yes,
+//is locked out: no
 ```
