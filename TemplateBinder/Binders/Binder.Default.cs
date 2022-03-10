@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using TemplateBinder.Factories;
 using TemplateBinder.Parameters;
 
-namespace TemplateBinder
+namespace TemplateBinder.Binders
 {
 	public class BinderDefault : IBinder
 	{
@@ -89,8 +89,6 @@ namespace TemplateBinder
 			return pipeNameMatch.Success ? pipeNameMatch.ToString() : Constants.Pipes.Text;
 		}
 		private MatchCollection GetPlaceHolders()
-		{
-			return Constants.Regex.Placeholder.Matches(_template);
-		}
+			=> Constants.Regex.Placeholder.Matches(_template);
 	}
 }

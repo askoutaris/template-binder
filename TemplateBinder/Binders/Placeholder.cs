@@ -1,13 +1,7 @@
-﻿using TemplateBinder.Parameters;
-using TemplateBinder.Pipes;
+﻿using TemplateBinder.Pipes;
 
-namespace TemplateBinder
+namespace TemplateBinder.Binders
 {
-	public interface IBinder
-	{
-		string Bind(Parameter[] parameters);
-	}
-
 	class Placeholder
 	{
 		public string PlaceholderText { get; }

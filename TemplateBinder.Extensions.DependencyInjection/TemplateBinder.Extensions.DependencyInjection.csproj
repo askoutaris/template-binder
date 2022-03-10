@@ -8,12 +8,13 @@
 		<Company>Alkiviadis Skoutaris</Company>
 		<Description>Extensions for TemplateBinder to be used with Microsoft dependency injection</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Version>1.0.0</Version>
+		<RepositoryUrl>https://github.com/askoutaris/template-binder</RepositoryUrl>
+		<Version>1.0.1</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
-		<PackageReference Include="TemplateBinder" Version="1.0.1" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+		<PackageReference Include="TemplateBinder" Version="2.0.0" />
 	</ItemGroup>
 
 </Project>

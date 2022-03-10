@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using TemplateBinder.Binders;
 using TemplateBinder.Extensions.DependencyInjection;
 using TemplateBinder.Factories;
 using TemplateBinder.Parameters;
@@ -36,8 +37,8 @@ namespace Workbench
 				typeof(TextPipe),
 			};
 
-			var pipeFactory = new PipeFactoryDefault(pipeTypes);
-			var binderFactory = new BinderFactoryDefault(pipeFactory);
+			IPipeFactory pipeFactory = new PipeFactoryDefault(pipeTypes);
+			IBinderFactory binderFactory = new BinderFactoryDefault(pipeFactory);
 			BindText(binderFactory);
 		}
 
@@ -51,7 +52,7 @@ has account balance {AccountBalance|decimal:format=N2},
 is active: {IsActive|booleantext:falseValue=no,trueValue=yes},
 is locked out: {IsLockedOut|booleantext:falseValue=no,trueValue=yes}";
 
-			var binder = binderFactory.Create(template);
+			IBinder binder = binderFactory.Create(template);
 
 			var parameters = new Parameter[] {
 				new Parameter.Text("FirstName", "David"),

@@ -1,4 +1,6 @@
-﻿namespace TemplateBinder.Factories
+﻿using TemplateBinder.Binders;
+
+namespace TemplateBinder.Factories
 {
 	public class BinderFactoryDefault : IBinderFactory
 	{
