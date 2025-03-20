@@ -20,7 +20,7 @@ namespace Workbench
 		{
 			// setup our DI
 			var serviceProvider = new ServiceCollection()
-				.AddTemplateBinder()
+				.AddTemplateBinder(throwOnMissingParameters: true)
 				.BuildServiceProvider();
 
 			// resolve IBinderFactory
@@ -38,7 +38,7 @@ namespace Workbench
 			};
 
 			IPipeFactory pipeFactory = new PipeFactoryDefault(pipeTypes);
-			IBinderFactory binderFactory = new BinderFactoryDefault(pipeFactory);
+			IBinderFactory binderFactory = new BinderFactoryDefault(pipeFactory, true);
 			BindText(binderFactory);
 		}
 
