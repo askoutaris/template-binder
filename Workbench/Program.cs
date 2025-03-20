@@ -45,12 +45,12 @@ namespace Workbench
 		private static void BindText(IBinderFactory binderFactory)
 		{
 			var template = @"
-The user {FirstName} {LastName} 
-born {DateOfBirth|date:format=o} 
-has logged in {LoginTimes},
-has account balance {AccountBalance|decimal:format=N2},
-is active: {IsActive|booleantext:falseValue=no,trueValue=yes},
-is locked out: {IsLockedOut|booleantext:falseValue=no,trueValue=yes}";
+				The user {FirstName} {LastName} 
+				born {DateOfBirth|date:format=o} 
+				has logged in {LoginTimes},
+				has account balance {AccountBalance|decimal:format=N2},
+				is active: {IsActive|booleantext:falseValue=no,trueValue=yes},
+				is locked out: {IsLockedOut|booleantext:falseValue=no,trueValue=yes}";
 
 			IBinder binder = binderFactory.Create(template);
 

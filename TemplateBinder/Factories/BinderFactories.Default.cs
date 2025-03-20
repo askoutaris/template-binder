@@ -12,6 +12,6 @@ namespace TemplateBinder.Factories
 		}
 
 		public IBinder Create(string template)
-			=> new BinderDefault(_pipeFactory, template);
+			=> new BinderDefault(_pipeFactory, template,true);
 	}
 }

@@ -13,12 +13,14 @@ namespace TemplateBinder.Binders
 	{
 		private readonly IPipeFactory _pipeFactory;
 		private readonly string _template;
+		private readonly bool _throwOnMissingParameters;
 		private Placeholder[] _placeholders;
 
-		public BinderDefault(IPipeFactory pipeFactory, string template)
+		public BinderDefault(IPipeFactory pipeFactory, string template, bool throwOnMissingParameters)
 		{
 			_pipeFactory = pipeFactory;
 			_template = template;
+			_throwOnMissingParameters = throwOnMissingParameters;
 			_placeholders = Array.Empty<Placeholder>();
 
 			ParseTemplate();
@@ -30,7 +32,15 @@ namespace TemplateBinder.Binders
 			foreach (var placeholder in _placeholders)
 			{
 				var parameter = parameters.FirstOrDefault(x => x.Name == placeholder.ParameterName);
+
+				if (parameter is null)
+					if (_throwOnMissingParameters)
+						throw new ArgumentException($"Parameter missing {placeholder.ParameterName}");
+					else
+						continue;
+
 				var value = placeholder.Pipe.Transform(parameter);
+
 				sb.Replace(placeholder.PlaceholderText, value.GetValue()?.ToString() ?? string.Empty);
 			}
 
