@@ -13,5 +13,9 @@
 		<PackageId>TemplateBinder</PackageId>
 		<Version>2.0.2</Version>
 	</PropertyGroup>
-	
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="Tests" />
+		<InternalsVisibleTo Include="Workbench" />
+	</ItemGroup>
 </Project>
