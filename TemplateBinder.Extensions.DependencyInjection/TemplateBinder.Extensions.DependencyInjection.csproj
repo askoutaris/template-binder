@@ -7,11 +7,13 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Authors>Alkiviadis Skoutaris</Authors>
 		<Company>Alkiviadis Skoutaris</Company>
-		<Description>Extensions for TemplateBinder to be used with Microsoft dependency injection</Description>
+		<Description>Microsoft.Extensions.DependencyInjection integration for TemplateBinder. Provides AddTemplateBinder() extension method for easy service registration.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<RepositoryUrl>https://github.com/askoutaris/template-binder</RepositoryUrl>
 		<PackageId>TemplateBinder.Extensions.DependencyInjection</PackageId>
-		<Version>2.0.0</Version>
+		<Version>3.0.0</Version>
+		<PackageReleaseNotes>⚠️ BREAKING CHANGES - Complete architectural rewrite. Not backward compatible with v2.x. See https://github.com/askoutaris/template-binder/blob/main/MIGRATION.md for migration guide. Major changes: AddTemplateBinder signature changed (no throwOnMissingParameters), inject ITemplateFactory instead of IBinderFactory, requires .NET 8.0.</PackageReleaseNotes>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>

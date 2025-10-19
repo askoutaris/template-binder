@@ -182,6 +182,7 @@ public class YourPipe : IPipe
 ## Key Implementation Details
 
 - Template parsing happens once during `ITemplate` creation via factory, templates are reusable
+- **Performance Pattern**: Create templates once (in constructor/static field), bind multiple times
 - Token-based architecture allows efficient rendering without regex replacement
 - Parameters stored in dictionary (O(1) lookup) during binding
 - Missing parameters throw `ArgumentException` during binding
@@ -190,3 +191,29 @@ public class YourPipe : IPipe
 - PipeActivator uses FrozenDictionary for fast pipe type lookup
 - Parameter types are readonly structs for better performance
 - PlaceholderParser trims whitespace from parameter names and pipe context
+
+## Usage Best Practices
+
+**✅ DO: Create templates once, reuse many times**
+```csharp
+public class EmailService
+{
+    private readonly ITemplate _template;
+
+    public EmailService(ITemplateFactory factory)
+    {
+        _template = factory.Create("Welcome {{Name}}!");
+    }
+
+    public string Send(string name) => _template.Bind([new TextParameter("Name", name)]);
+}
+```
+
+**❌ DON'T: Create templates on every call**
+```csharp
+public string Send(string name)
+{
+    var template = _factory.Create("Welcome {{Name}}!");  // Expensive parsing every time!
+    return template.Bind([new TextParameter("Name", name)]);
+}
+```

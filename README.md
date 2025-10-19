@@ -2,6 +2,18 @@
 
 A lightweight, Angular-like text template binding library for C# that enables powerful string interpolation with transformation pipelines.
 
+## ⚠️ Version 3.0 - Breaking Changes
+
+**If you're upgrading from v2.x, please read the [MIGRATION GUIDE](MIGRATION.md).**
+
+Version 3.0.0 is a complete rewrite with breaking changes:
+- Template syntax changed from `{...}` to `{{...}}`
+- API changed from `IBinder` to `ITemplate`
+- Parameter types changed from classes to structs
+- Requires .NET 8.0 (was .NET Standard 2.0)
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
+
 ## Features
 
 - **Simple Syntax**: Angular-inspired placeholder syntax `{{ParameterName|pipe:param1=value1}}`
@@ -171,32 +183,35 @@ public void ConfigureServices(IServiceCollection services)
 }
 ```
 
-Then inject `ITemplateFactory` into your services:
+Then inject `ITemplateFactory` into your services and **create templates once, reuse many times**:
 
 ```csharp
 public class EmailService
 {
-    private readonly ITemplateFactory _templateFactory;
+    private readonly ITemplate _emailTemplate;
 
     public EmailService(ITemplateFactory templateFactory)
     {
-        _templateFactory = templateFactory;
+        // ✅ GOOD: Create template once in constructor
+        _emailTemplate = templateFactory.Create(
+            "Dear {{FirstName}}, your account balance is {{Balance|number:format=C}}."
+        );
     }
 
     public string GenerateEmailBody(User user)
     {
-        var templateString = "Dear {{FirstName}}, your account balance is {{Balance|number:format=C}}.";
-        var template = _templateFactory.Create(templateString);
-
+        // ✅ GOOD: Reuse the same template with different parameters
         var parameters = new IParameter[] {
             new TextParameter("FirstName", user.FirstName),
             new NumberParameter("Balance", user.Balance)
         };
 
-        return template.Bind(parameters);
+        return _emailTemplate.Bind(parameters);
     }
 }
 ```
+
+**⚠️ Performance Tip:** Always create templates once (in constructor or static field) and reuse them. Template parsing is expensive, binding is fast.
 
 ### Microsoft Dependency Injection (Console Apps)
 
@@ -386,10 +401,18 @@ TemplateBinder is designed for high performance:
 - **No Reflection During Binding**: Pipe instances created during template parsing, not during binding
 
 ```csharp
-// Good: Parse once, bind many times
+// ✅ GOOD: Parse once, bind many times
 var template = templateFactory.Create(emailTemplate);
 foreach (var user in users)
 {
+    var email = template.Bind(CreateParameters(user));
+    SendEmail(email);
+}
+
+// ❌ BAD: Parsing inside the loop
+foreach (var user in users)
+{
+    var template = templateFactory.Create(emailTemplate);  // DON'T DO THIS!
     var email = template.Bind(CreateParameters(user));
     SendEmail(email);
 }
@@ -397,9 +420,33 @@ foreach (var user in users)
 
 ### Performance Tips
 
-1. **Reuse templates**: Create once, bind multiple times
+1. **✅ ALWAYS create templates once, reuse many times**
+   ```csharp
+   // ✅ GOOD: Parse once
+   private readonly ITemplate _template;
+   public MyService(ITemplateFactory factory)
+   {
+       _template = factory.Create("Hello {{Name}}!");
+   }
+   public string Generate(string name) => _template.Bind([new TextParameter("Name", name)]);
+
+   // ❌ BAD: Parsing on every call
+   public string Generate(string name)
+   {
+       var template = _factory.Create("Hello {{Name}}!");  // Expensive!
+       return template.Bind([new TextParameter("Name", name)]);
+   }
+   ```
+
 2. **Use dependency injection**: Services are registered as singletons
-3. **Avoid re-parsing**: Cache ITemplate instances when possible
+3. **For static templates**: Consider static readonly fields
+   ```csharp
+   public class Constants
+   {
+       private static readonly ITemplateFactory _factory = CreateFactory();
+       public static readonly ITemplate WelcomeEmail = _factory.Create("Welcome {{Name}}!");
+   }
+   ```
 
 ## Requirements
 

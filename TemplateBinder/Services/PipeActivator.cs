@@ -6,20 +6,48 @@ using TemplateBinder.Pipes;
 
 namespace TemplateBinder.Services
 {
+	/// <summary>
+	/// Factory for creating pipe instances by name with reflection-based activation.
+	/// </summary>
 	public interface IPipeActivator
 	{
+		/// <summary>
+		/// Creates a pipe instance by name with the specified parameters.
+		/// </summary>
+		/// <param name="name">The pipe name as defined by <see cref="PipeNameAttribute"/>.</param>
+		/// <param name="parameters">The parameters to pass to the pipe constructor.</param>
+		/// <returns>A new pipe instance configured with the provided parameters.</returns>
+		/// <exception cref="InvalidOperationException">Thrown when no pipe is registered with the specified name or when the pipe cannot be activated.</exception>
 		IPipe Create(string name, NameValueCollection parameters);
 	}
 
+	/// <summary>
+	/// Reflection-based pipe activator that creates pipe instances from registered types.
+	/// Uses <see cref="FrozenDictionary{TKey,TValue}"/> for O(1) pipe type lookups by name.
+	/// Validates that all pipe types have exactly one constructor and implement <see cref="IPipe"/>.
+	/// </summary>
 	public class PipeActivator : IPipeActivator
 	{
 		private readonly FrozenDictionary<string, Type> _pipes;
 
+		/// <summary>
+		/// Initializes a new instance of <see cref="PipeActivator"/> with the specified pipe types.
+		/// </summary>
+		/// <param name="pipeTypes">The collection of pipe types to register. Each type must be decorated with <see cref="PipeNameAttribute"/> and implement <see cref="IPipe"/>.</param>
+		/// <exception cref="Exception">Thrown when a pipe type is missing <see cref="PipeNameAttribute"/>, does not implement <see cref="IPipe"/>, or has multiple constructors.</exception>
 		public PipeActivator(IReadOnlyCollection<Type> pipeTypes)
 		{
 			_pipes = InitializePipeMapping(pipeTypes);
 		}
 
+		/// <summary>
+		/// Creates a pipe instance by name with the specified parameters.
+		/// Maps parameter names to constructor parameters case-insensitively and converts values using <see cref="TypeDescriptor"/>.
+		/// </summary>
+		/// <param name="pipeName">The pipe name as defined by <see cref="PipeNameAttribute"/>.</param>
+		/// <param name="parameters">The parameters to pass to the pipe constructor.</param>
+		/// <returns>A new pipe instance configured with the provided parameters.</returns>
+		/// <exception cref="InvalidOperationException">Thrown when no pipe is registered with the specified name or when the pipe cannot be activated.</exception>
 		public IPipe Create(string pipeName, NameValueCollection parameters)
 		{
 			if (!_pipes.TryGetValue(pipeName, out var pipeType))
