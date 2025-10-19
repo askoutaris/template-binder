@@ -4,14 +4,14 @@ A lightweight, Angular-like text template binding library for C# that enables po
 
 ## Features
 
-- **Simple Syntax**: Angular-inspired placeholder syntax `{ParameterName|pipe:param1=value1}`
-- **Type-Safe Parameters**: Strongly-typed parameter system (Text, Number, Date, Boolean)
-- **Transformation Pipes**: Built-in pipes for common formatting needs (date, decimal, boolean-to-text)
+- **Simple Syntax**: Angular-inspired placeholder syntax `{{ParameterName|pipe:param1=value1}}`
+- **Type-Safe Parameters**: Strongly-typed parameter system (TextParameter, NumberParameter, DateTimeParameter, BooleanParameter)
+- **Transformation Pipes**: Built-in pipes for common formatting needs (datetime, number, boolean)
 - **Extensible**: Easy-to-implement custom pipes for domain-specific transformations
 - **Dependency Injection**: First-class support for Microsoft.Extensions.DependencyInjection
-- **.NET Standard 2.0**: Compatible with .NET Core, .NET Framework, and .NET 5+
-- **Reusable Binders**: Parse once, bind multiple times for performance
-- **Flexible Error Handling**: Choose to throw exceptions or silently handle missing parameters
+- **.NET 8.0**: Modern .NET platform with latest C# features
+- **High Performance**: Token-based architecture with O(1) lookups and readonly structs
+- **Reusable Templates**: Parse once, bind multiple times for maximum performance
 
 ## Installation
 
@@ -35,37 +35,63 @@ dotnet add package TemplateBinder.Extensions.DependencyInjection
 
 ## Quick Start
 
+### Using Dependency Injection (Recommended)
+
 ```csharp
-using TemplateBinder.Binders;
-using TemplateBinder.Factories;
+using Microsoft.Extensions.DependencyInjection;
+using TemplateBinder.Extensions.DependencyInjection;
 using TemplateBinder.Parameters;
-using TemplateBinder.Pipes;
+using TemplateBinder.Services;
 
-// Create pipe and binder factories
-var pipeTypes = new Type[] {
-    typeof(BooleanTextPipe),
-    typeof(DatePipe),
-    typeof(DecimalPipe),
-    typeof(TextPipe),
-};
+// Setup Dependency Injection
+var services = new ServiceCollection();
+services.AddTemplateBinder(); // Registers built-in pipes
 
-var pipeFactory = new PipeFactoryDefault(pipeTypes);
-var binderFactory = new BinderFactoryDefault(pipeFactory, throwOnMissingParameters: true);
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve ITemplateFactory
+var templateFactory = serviceProvider.GetRequiredService<ITemplateFactory>();
 
 // Define your template
-var template = "Hello {FirstName} {LastName}!";
+var templateString = "Hello {{FirstName}} {{LastName}}!";
 
-// Create a binder (parsing happens once)
-var binder = binderFactory.Create(template);
+// Create a template (parsing happens once)
+var template = templateFactory.Create(templateString);
 
 // Bind parameters to the template
-var parameters = new Parameter[] {
-    new Parameter.Text("FirstName", "John"),
-    new Parameter.Text("LastName", "Doe")
+var parameters = new IParameter[] {
+    new TextParameter("FirstName", "John"),
+    new TextParameter("LastName", "Doe")
 };
 
-var result = binder.Bind(parameters);
+var result = template.Bind(parameters);
 // Output: "Hello John Doe!"
+```
+
+### Without Dependency Injection
+
+```csharp
+using TemplateBinder.Parameters;
+using TemplateBinder.Pipes;
+using TemplateBinder.Services;
+
+// Setup services manually
+var parser = new TemplateParser();
+var placeholderParser = new PlaceholderParser();
+var pipeActivator = new PipeActivator([
+    typeof(DateTimePipe),
+    typeof(NumberPipe),
+    typeof(BooleanPipe)
+]);
+var tokensFactory = new TemplateTokensFactory(placeholderParser, pipeActivator);
+var templateFactory = new TemplateFactory(parser, tokensFactory);
+
+// Create and use template
+var template = templateFactory.Create("Hello {{FirstName}} {{LastName}}!");
+var result = template.Bind([
+    new TextParameter("FirstName", "John"),
+    new TextParameter("LastName", "Doe")
+]);
 ```
 
 ## Template Syntax
@@ -73,20 +99,20 @@ var result = binder.Bind(parameters);
 Templates use placeholders with the following syntax:
 
 ```
-{ParameterName|pipeName:param1=value1,param2=value2}
+{{ParameterName|pipeName:param1=value1,param2=value2}}
 ```
 
 - **ParameterName**: The name of the parameter to bind (required)
-- **|pipeName**: Optional pipe to transform the parameter (defaults to `text`)
+- **|pipeName**: Optional pipe to transform the parameter (uses parameter's default text representation if omitted)
 - **:param1=value1**: Optional comma-separated pipe parameters
 
 ### Examples
 
 ```csharp
-{FirstName}                                           // Simple text binding
-{DateOfBirth|date:format=yyyy-MM-dd}                 // Date formatting
-{AccountBalance|decimal:format=N2}                   // Decimal with 2 decimals
-{IsActive|booleantext:trueValue=Yes,falseValue=No}  // Boolean to text
+{{FirstName}}                                            // Simple text binding
+{{DateOfBirth|datetime:format=yyyy-MM-dd}}               // Date formatting
+{{AccountBalance|number:format=N2}}                      // Number with 2 decimals
+{{IsActive|boolean:trueValue=Yes,falseValue=No}}        // Boolean to text
 ```
 
 ## Usage Examples
@@ -94,29 +120,29 @@ Templates use placeholders with the following syntax:
 ### Complete Example with All Parameter Types
 
 ```csharp
-var template = @"
-    User Report
-    -----------
-    Name: {FirstName} {LastName}
-    Born: {DateOfBirth|date:format=yyyy-MM-dd}
-    Login Count: {LoginTimes}
-    Balance: ${AccountBalance|decimal:format=N2}
-    Active: {IsActive|booleantext:trueValue=Yes,falseValue=No}
-    Locked: {IsLockedOut|booleantext:trueValue=Yes,falseValue=No}";
+var templateString = @"
+User Report
+-----------
+Name: {{FirstName}} {{LastName}}
+Born: {{DateOfBirth|datetime:format=yyyy-MM-dd}}
+Login Count: {{LoginTimes}}
+Balance: ${{AccountBalance|number:format=N2}}
+Active: {{IsActive|boolean:trueValue=Yes,falseValue=No}}
+Locked: {{IsLockedOut|boolean:trueValue=Yes,falseValue=No}}";
 
-var binder = binderFactory.Create(template);
+var template = templateFactory.Create(templateString);
 
-var parameters = new Parameter[] {
-    new Parameter.Text("FirstName", "David"),
-    new Parameter.Text("LastName", "Parker"),
-    new Parameter.Date("DateOfBirth", new DateTime(1980, 08, 15)),
-    new Parameter.Number("LoginTimes", 85),
-    new Parameter.Number("AccountBalance", 1750.45M),
-    new Parameter.Boolean("IsActive", true),
-    new Parameter.Boolean("IsLockedOut", false)
+var parameters = new IParameter[] {
+    new TextParameter("FirstName", "David"),
+    new TextParameter("LastName", "Parker"),
+    new DateTimeParameter("DateOfBirth", new DateTime(1980, 08, 15)),
+    new NumberParameter("LoginTimes", 85),
+    new NumberParameter("AccountBalance", 1750.45M),
+    new BooleanParameter("IsActive", true),
+    new BooleanParameter("IsLockedOut", false)
 };
 
-var result = binder.Bind(parameters);
+var result = template.Bind(parameters);
 ```
 
 **Output:**
@@ -138,39 +164,36 @@ Install the `TemplateBinder.Extensions.DependencyInjection` package and register
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddTemplateBinder(throwOnMissingParameters: true);
+    services.AddTemplateBinder();
 
     // Or with custom pipes
-    services.AddTemplateBinder(
-        throwOnMissingParameters: true,
-        additionalPipeTypes: new[] { typeof(MyCustomPipe) }
-    );
+    services.AddTemplateBinder(typeof(MyCustomPipe), typeof(AnotherCustomPipe));
 }
 ```
 
-Then inject `IBinderFactory` into your services:
+Then inject `ITemplateFactory` into your services:
 
 ```csharp
 public class EmailService
 {
-    private readonly IBinderFactory _binderFactory;
+    private readonly ITemplateFactory _templateFactory;
 
-    public EmailService(IBinderFactory binderFactory)
+    public EmailService(ITemplateFactory templateFactory)
     {
-        _binderFactory = binderFactory;
+        _templateFactory = templateFactory;
     }
 
     public string GenerateEmailBody(User user)
     {
-        var template = "Dear {FirstName}, your account balance is {Balance|decimal:format=C}.";
-        var binder = _binderFactory.Create(template);
+        var templateString = "Dear {{FirstName}}, your account balance is {{Balance|number:format=C}}.";
+        var template = _templateFactory.Create(templateString);
 
-        var parameters = new Parameter[] {
-            new Parameter.Text("FirstName", user.FirstName),
-            new Parameter.Number("Balance", user.Balance)
+        var parameters = new IParameter[] {
+            new TextParameter("FirstName", user.FirstName),
+            new NumberParameter("Balance", user.Balance)
         };
 
-        return binder.Bind(parameters);
+        return template.Bind(parameters);
     }
 }
 ```
@@ -179,50 +202,52 @@ public class EmailService
 
 ```csharp
 var serviceProvider = new ServiceCollection()
-    .AddTemplateBinder(throwOnMissingParameters: true)
+    .AddTemplateBinder()
     .BuildServiceProvider();
 
-var binderFactory = serviceProvider.GetService<IBinderFactory>();
+var templateFactory = serviceProvider.GetRequiredService<ITemplateFactory>();
 ```
 
 ## Built-in Pipes
 
-### Text Pipe (default)
-
-Returns the parameter value as-is.
-
-```csharp
-{Name}              // Uses text pipe by default
-{Name|text}         // Explicit text pipe
-```
-
-### Date Pipe
+### DateTime Pipe
 
 Formats `DateTime` values using standard .NET format strings.
 
 ```csharp
-{BirthDate|date:format=yyyy-MM-dd}              // 2024-03-15
-{Timestamp|date:format=o}                       // ISO 8601 format
-{EventDate|date:format=MMMM dd\, yyyy}          // March 15, 2024
+{{BirthDate|datetime:format=yyyy-MM-dd}}              // 2024-03-15
+{{Timestamp|datetime:format=o}}                       // ISO 8601 format
+{{EventDate|datetime:format=MMMM dd\, yyyy}}          // March 15, 2024
 ```
 
-### Decimal Pipe
+### Number Pipe
 
 Formats numeric values using standard .NET numeric format strings.
 
 ```csharp
-{Price|decimal:format=N2}         // 1,234.56 (with thousand separators)
-{Amount|decimal:format=C}          // $1,234.56 (currency)
-{Percentage|decimal:format=P2}     // 12.34% (percentage)
+{{Price|number:format=N2}}         // 1,234.56 (with thousand separators)
+{{Amount|number:format=C}}         // $1,234.56 (currency)
+{{Percentage|number:format=P2}}    // 12.34% (percentage)
 ```
 
-### BooleanText Pipe
+### Boolean Pipe
 
 Converts boolean values to custom text representations.
 
 ```csharp
-{IsActive|booleantext:trueValue=Active,falseValue=Inactive}
-{HasAccess|booleantext:trueValue=✓,falseValue=✗}
+{{IsActive|boolean:trueValue=Active,falseValue=Inactive}}
+{{HasAccess|boolean:trueValue=✓,falseValue=✗}}
+```
+
+### No Pipe (Default Parameter Text)
+
+If no pipe is specified, the parameter's `GetText()` method is used:
+
+```csharp
+{{Name}}              // Returns TextParameter.Value
+{{Count}}             // Returns NumberParameter.Value.ToString()
+{{Date}}              // Returns DateTimeParameter.Value in ISO 8601 format
+{{IsActive}}          // Returns "True" or "False"
 ```
 
 ## Creating Custom Pipes
@@ -230,24 +255,24 @@ Converts boolean values to custom text representations.
 Implement the `IPipe` interface and add the `[PipeName]` attribute:
 
 ```csharp
-using TemplateBinder.Attributes;
 using TemplateBinder.Parameters;
 using TemplateBinder.Pipes;
 
 [PipeName("uppercase")]
 public class UppercasePipe : IPipe
 {
+    // Must have exactly one public constructor
     public UppercasePipe()
     {
     }
 
     public IParameter Transform(IParameter parameter)
     {
-        if (parameter is not Parameter.Text text)
-            throw new ArgumentException("Uppercase pipe requires Text parameter");
+        if (parameter is not TextParameter text)
+            throw new ArgumentException("Uppercase pipe requires TextParameter");
 
         var value = text.Value?.ToUpperInvariant();
-        return new Parameter.Text(parameter.Name, value);
+        return new TextParameter(parameter.Name, value);
     }
 }
 ```
@@ -261,6 +286,8 @@ public class TruncatePipe : IPipe
     private readonly int _maxLength;
     private readonly string _suffix;
 
+    // Constructor parameters match template syntax
+    // {{Text|truncate:maxLength=50,suffix=...}}
     public TruncatePipe(string? maxLength, string? suffix)
     {
         _maxLength = int.Parse(maxLength ?? "10");
@@ -269,8 +296,8 @@ public class TruncatePipe : IPipe
 
     public IParameter Transform(IParameter parameter)
     {
-        if (parameter is not Parameter.Text text)
-            throw new ArgumentException("Truncate pipe requires Text parameter");
+        if (parameter is not TextParameter text)
+            throw new ArgumentException("Truncate pipe requires TextParameter");
 
         var value = text.Value;
         if (value != null && value.Length > _maxLength)
@@ -278,98 +305,106 @@ public class TruncatePipe : IPipe
             value = value.Substring(0, _maxLength) + _suffix;
         }
 
-        return new Parameter.Text(parameter.Name, value);
+        return new TextParameter(parameter.Name, value);
     }
 }
 ```
 
 Usage:
 ```csharp
-{Description|truncate:maxLength=50,suffix=...}
+{{Description|truncate:maxLength=50,suffix=...}}
 ```
 
 ### Registering Custom Pipes
 
 **With Dependency Injection:**
 ```csharp
-services.AddTemplateBinder(
-    throwOnMissingParameters: true,
-    additionalPipeTypes: new[] { typeof(UppercasePipe), typeof(TruncatePipe) }
-);
+services.AddTemplateBinder(typeof(UppercasePipe), typeof(TruncatePipe));
 ```
 
 **Without Dependency Injection:**
 ```csharp
-var pipeTypes = new Type[] {
-    typeof(TextPipe),
-    typeof(DatePipe),
-    typeof(DecimalPipe),
-    typeof(BooleanTextPipe),
+var pipeActivator = new PipeActivator([
+    typeof(DateTimePipe),
+    typeof(NumberPipe),
+    typeof(BooleanPipe),
     typeof(UppercasePipe),      // Your custom pipe
     typeof(TruncatePipe)         // Your custom pipe
-};
-
-var pipeFactory = new PipeFactoryDefault(pipeTypes);
-var binderFactory = new BinderFactoryDefault(pipeFactory, throwOnMissingParameters: true);
+]);
 ```
 
 ## Parameter Types
 
-### Parameter.Text
+All parameter types are readonly structs implementing `IParameter` with a `Name`, type-specific `Value`, and `GetText()` method.
+
+### TextParameter
 ```csharp
-new Parameter.Text("Name", "John Doe")
+new TextParameter("Name", "John Doe")
+new TextParameter("Description", null)  // Returns parameter name if value is null
 ```
 
-### Parameter.Number
+### NumberParameter
 ```csharp
-new Parameter.Number("Age", 25)
-new Parameter.Number("Price", 99.99M)
+new NumberParameter("Age", 25)
+new NumberParameter("Price", 99.99M)
+new NumberParameter("Count", null)  // Returns parameter name if value is null
 ```
 
-### Parameter.Date
+### DateTimeParameter
 ```csharp
-new Parameter.Date("BirthDate", new DateTime(1990, 1, 15))
-new Parameter.Date("Timestamp", DateTime.Now)
+new DateTimeParameter("BirthDate", new DateTime(1990, 1, 15))
+new DateTimeParameter("Timestamp", DateTime.Now)
+new DateTimeParameter("Date", null)  // Returns parameter name if value is null
 ```
 
-### Parameter.Boolean
+### BooleanParameter
 ```csharp
-new Parameter.Boolean("IsActive", true)
-new Parameter.Boolean("HasAccess", false)
+new BooleanParameter("IsActive", true)
+new BooleanParameter("HasAccess", false)
+new BooleanParameter("Flag", null)  // Returns parameter name if value is null
 ```
 
 ## Error Handling
 
-Control how missing parameters are handled using the `throwOnMissingParameters` flag:
+Missing parameters will throw an `ArgumentException` during binding:
 
 ```csharp
-// Throw exception when parameter is missing
-var binderFactory = new BinderFactoryDefault(pipeFactory, throwOnMissingParameters: true);
-
-// Silently skip missing parameters (placeholder remains in output)
-var binderFactory = new BinderFactoryDefault(pipeFactory, throwOnMissingParameters: false);
+var template = templateFactory.Create("Hello {{Name}}!");
+var result = template.Bind([]);  // Throws ArgumentException: "Parameter Name was not found"
 ```
+
+**Important**: Always ensure all required parameters are provided. There is no silent fallback option.
 
 ## Performance
 
-- **Parse Once, Bind Multiple Times**: Template parsing happens once during binder creation. Reuse binders for repeated operations with different parameter values.
-- **StringBuilder-based**: Uses `StringBuilder.Replace()` for efficient text manipulation
-- **No Reflection During Binding**: Pipe resolution happens during template parsing, not during binding
+TemplateBinder is designed for high performance:
+
+- **Parse Once, Bind Multiple Times**: Template parsing happens once during template creation. Reuse templates for maximum performance.
+- **Token-Based Architecture**: Uses pre-parsed token objects instead of regex replacement during binding
+- **O(1) Lookups**: Parameters stored in dictionary, pipe types in FrozenDictionary
+- **Readonly Structs**: Parameter types are readonly structs for better memory efficiency
+- **No Reflection During Binding**: Pipe instances created during template parsing, not during binding
 
 ```csharp
 // Good: Parse once, bind many times
-var binder = binderFactory.Create(emailTemplate);
+var template = templateFactory.Create(emailTemplate);
 foreach (var user in users)
 {
-    var email = binder.Bind(CreateParameters(user));
+    var email = template.Bind(CreateParameters(user));
     SendEmail(email);
 }
 ```
 
+### Performance Tips
+
+1. **Reuse templates**: Create once, bind multiple times
+2. **Use dependency injection**: Services are registered as singletons
+3. **Avoid re-parsing**: Cache ITemplate instances when possible
+
 ## Requirements
 
-- **.NET Standard 2.0** or higher
-- **C# 9.0** language features (nullable reference types)
+- **.NET 8.0** or higher
+- Latest C# version with nullable reference types enabled
 
 ## License
 
