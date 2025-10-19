@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TemplateBinder is a C# library that provides Angular-like template binding for text templates. It uses a placeholder syntax `{ParameterName|pipeName:param1=value1,param2=value2}` to transform parameters into formatted text output.
+TemplateBinder is a C# library that provides Angular-like template binding for text templates. It uses a placeholder syntax `{{ParameterName|pipeName:param1=value1,param2=value2}}` to transform parameters into formatted text output.
 
-The library targets .NET Standard 2.0 and uses C# 9 with nullable reference types enabled.
+The library targets .NET 8.0 and uses the latest C# version with nullable reference types enabled.
 
 ## Solution Structure
 
 - **TemplateBinder**: Core library containing the template binding engine
 - **TemplateBinder.Extensions.DependencyInjection**: Microsoft.Extensions.DependencyInjection integration
+- **Tests**: xUnit test project with comprehensive unit tests
 - **Workbench**: Console application for testing and examples
 
 ## Build and Test Commands
@@ -25,6 +26,16 @@ dotnet build TemplateBinder.sln
 ```bash
 dotnet build TemplateBinder/TemplateBinder.csproj
 dotnet build TemplateBinder.Extensions.DependencyInjection/TemplateBinder.Extensions.DependencyInjection.csproj
+```
+
+### Run tests
+```bash
+dotnet test Tests/Tests.csproj
+```
+
+### Run tests with code coverage
+```bash
+dotnet test Tests/Tests.csproj --collect:"XPlat Code Coverage"
 ```
 
 ### Run the Workbench (examples)
@@ -47,74 +58,105 @@ dotnet pack TemplateBinder.Extensions.DependencyInjection/TemplateBinder.Extensi
 
 ### Template Parsing Flow
 
-1. **IBinderFactory** creates **IBinder** instances from template strings
-2. **BinderDefault** (implements IBinder) parses the template during construction:
-   - Uses regex patterns from `Constants.Regex` to find placeholders matching `{...}`
-   - Extracts parameter name, pipe name, and pipe parameters from each placeholder
-   - Creates **Placeholder** objects containing the original text, parameter name, and configured **IPipe**
-3. When `Bind(Parameter[])` is called:
-   - Matches each placeholder's parameter name against provided parameters
-   - Applies the pipe transformation to convert parameter to text
-   - Replaces placeholder text with transformed value
+1. **ITemplateFactory** creates **ITemplate** instances from template strings
+2. **TemplateFactory** orchestrates the parsing pipeline:
+   - **TemplateParser** splits the template into string tokens (text and placeholders using regex)
+   - **TemplateTokensFactory** converts string tokens into **ITemplateToken** objects:
+     - Text tokens (literal strings) → **TextToken**
+     - Placeholder tokens (`{{...}}`) → **PlaceholderToken**
+   - **PlaceholderParser** extracts parameter name and pipe information from placeholders
+   - **PipeActivator** creates **IPipe** instances using reflection and constructor injection
+3. When `Bind(IReadOnlyCollection<IParameter>)` is called:
+   - Template converts parameters to dictionary for O(1) lookup
+   - Each token generates its text representation:
+     - TextToken returns literal text
+     - PlaceholderToken looks up parameter, applies pipe transformation, returns result
+   - All token texts are concatenated using StringBuilder
 
 ### Template Syntax
 
-Templates use the format: `{ParameterName|pipeName:param1=value1,param2=value2}`
+Templates use the format: `{{ParameterName|pipeName:param1=value1,param2=value2}}`
 
 - `ParameterName`: The parameter to bind (required)
-- `|pipeName`: Optional pipe to transform the parameter (defaults to `text`)
+- `|pipeName`: Optional pipe to transform the parameter (no default, uses parameter's GetText() if omitted)
 - `:param1=value1,param2=value2`: Optional comma-separated pipe parameters
 
-Example: `{DateOfBirth|date:format=o}` applies the date pipe with format parameter "o"
+Example: `{{DateOfBirth|datetime:format=yyyy-MM-dd}}` applies the datetime pipe with format parameter "yyyy-MM-dd"
 
-### Regex Patterns (Constants.cs:14-19)
+### Parsing Implementation
 
-- **Placeholder**: `(\{)(.*?(\})` - Matches `{...}`
-- **ParameterName**: `[^{][^(||})]*` - Extracts parameter name from placeholder
-- **PipeName**: `(?<=\|)(.*?)(?=\:)` - Extracts pipe name after `|` before `:`
-- **PipeParameters**: `(?<=\:)(.*)[^}]` - Extracts parameters after `:`
+**TemplateParser** (TemplateBinder/Services/TemplateParser.cs):
+- Uses regex `({{.*?}})` to split template into tokens
+- Returns list of strings (text and placeholders)
+
+**PlaceholderParser** (TemplateBinder/Services/PlaceholderParser.cs):
+- Removes `{{` and `}}` from placeholder
+- Splits by `|` to separate parameter name from pipe context
+- Splits pipe context by `:` to separate pipe name from parameters
+- Parses parameters as comma-separated `name=value` pairs into NameValueCollection
+- Trims whitespace from all parts
 
 ### Parameter Types
 
-All parameters inherit from abstract `Parameter` class which implements `IParameter`:
+All parameter types are readonly structs implementing `IParameter`:
 
-- **Parameter.Text**: String values
-- **Parameter.Number**: Numeric values (decimal)
-- **Parameter.Date**: DateTime values
-- **Parameter.Boolean**: Boolean values
+- **TextParameter**: String values (returns value or parameter name if null)
+- **NumberParameter**: Numeric values (decimal) - returns formatted number or parameter name if null
+- **DateTimeParameter**: DateTime values - returns ISO 8601 format or parameter name if null
+- **BooleanParameter**: Boolean values - returns "True"/"False" or parameter name if null
+
+Each parameter has:
+- `Name` property (string)
+- Type-specific `Value` property (nullable)
+- `GetText()` method returning string representation
 
 ### Pipe System
 
 **IPipe** implementations transform `IParameter` to formatted output:
 
-- **TextPipe**: Default pipe, returns parameter value as-is
-- **DatePipe**: Formats DateTime with optional `format` parameter (e.g., `format=o`)
-- **DecimalPipe**: Formats numbers with optional `format` parameter (e.g., `format=N2`)
-- **BooleanTextPipe**: Converts boolean to text with `trueValue` and `falseValue` parameters
+- **DateTimePipe**: Formats DateTime with optional `format` parameter (e.g., `format=yyyy-MM-dd`)
+- **NumberPipe**: Formats numbers with optional `format` parameter (e.g., `format=N2`)
+- **BooleanPipe**: Converts boolean to text with required `trueValue` and `falseValue` parameters
 
-Pipes are registered with **IPipeFactory** and identified by `[PipeName]` attribute.
+Pipes are identified by `[PipeName("name")]` attribute and must have exactly one public constructor.
+
+**PipeActivator** (TemplateBinder/Services/PipeActivator.cs):
+- Uses FrozenDictionary for O(1) pipe type lookup
+- Matches constructor parameters to pipe parameters (case-insensitive)
+- Uses TypeDescriptor.GetConverter for parameter type conversion
+- Provides default values for missing optional parameters
+
+### Token System
+
+**ITemplateToken** implementations generate text output:
+
+- **TextToken**: Returns literal text unchanged
+- **PlaceholderToken**: Looks up parameter by name, applies optional pipe transformation, returns formatted text
 
 ### Dependency Injection Integration
 
-The `AddTemplateBinder(throwOnMissingParameters)` extension method registers:
-- `IPipeFactory` as singleton with default pipe types
-- `IBinderFactory` as singleton
+The `AddTemplateBinder(params Type[] customPipeTypes)` extension method registers:
+- `IPipeActivator` as singleton with built-in pipes (NumberPipe, DateTimePipe, BooleanPipe) + custom pipes
+- `ITemplateTokensFactory` as singleton
+- `IPlaceholderParser` as singleton
+- `ITemplateParser` as singleton
+- `ITemplateFactory` as singleton
 
-Optional `additionalPipeTypes` parameter allows registering custom pipes.
+Custom pipes can be registered by passing their types to the extension method.
 
-The `throwOnMissingParameters` parameter controls whether missing parameters throw exceptions or are silently ignored during binding.
+**Note**: Missing parameters will throw `ArgumentException` when binding. There is no silent fallback option.
 
 ## Adding Custom Pipes
 
 1. Implement `IPipe` interface with `Transform(IParameter parameter)` method
 2. Add `[PipeName("yourpipename")]` attribute to the class
-3. Accept pipe parameters via constructor (extracted from template syntax)
-4. When using DI: pass custom pipe type in `AddTemplateBinder(throwOnMissingParameters, new[] { typeof(YourPipe) })`
-5. When using manually: include type in `PipeFactoryDefault` constructor
+3. Create exactly one public constructor accepting pipe parameters
+4. When using DI: pass custom pipe type to `AddTemplateBinder(typeof(YourPipe))`
+5. When using manually: include type in `PipeActivator` constructor
 
-Example pattern (see DatePipe in TemplateBinder/Pipes/Date.cs:6-26):
+Example pattern (see DateTimePipe in TemplateBinder/Pipes/DateTimePipe.cs):
 ```csharp
-[PipeName(Constants.Pipes.YourPipe)]
+[PipeName("yourpipe")]
 public class YourPipe : IPipe
 {
     private readonly string? _param;
@@ -126,16 +168,52 @@ public class YourPipe : IPipe
 
     public IParameter Transform(IParameter parameter)
     {
+        // Type check the parameter
+        if (parameter is not YourParameterType typed)
+            throw new ArgumentException($"YourPipe requires YourParameterType");
+
         // Transform logic
-        return new Parameter.Text(parameter.Name, transformedValue);
+        var formattedValue = typed.Value?.ToString(_param);
+        return new TextParameter(parameter.Name, formattedValue);
     }
 }
 ```
 
 ## Key Implementation Details
 
-- Template parsing happens once during `IBinder` construction, binding is reusable
-- Missing parameters behavior controlled by `throwOnMissingParameters` flag in `BinderFactoryDefault`
-- Placeholder replacement uses `StringBuilder.Replace()` for performance
+- Template parsing happens once during `ITemplate` creation via factory, templates are reusable
+- **Performance Pattern**: Create templates once (in constructor/static field), bind multiple times
+- Token-based architecture allows efficient rendering without regex replacement
+- Parameters stored in dictionary (O(1) lookup) during binding
+- Missing parameters throw `ArgumentException` during binding
 - Pipe parameters extracted as `NameValueCollection` from template syntax
-- All pipes must return `IParameter`, typically `Parameter.Text` with formatted value
+- All pipes must return `IParameter`, typically `TextParameter` with formatted value
+- PipeActivator uses FrozenDictionary for fast pipe type lookup
+- Parameter types are readonly structs for better performance
+- PlaceholderParser trims whitespace from parameter names and pipe context
+
+## Usage Best Practices
+
+**✅ DO: Create templates once, reuse many times**
+```csharp
+public class EmailService
+{
+    private readonly ITemplate _template;
+
+    public EmailService(ITemplateFactory factory)
+    {
+        _template = factory.Create("Welcome {{Name}}!");
+    }
+
+    public string Send(string name) => _template.Bind([new TextParameter("Name", name)]);
+}
+```
+
+**❌ DON'T: Create templates on every call**
+```csharp
+public string Send(string name)
+{
+    var template = _factory.Create("Welcome {{Name}}!");  // Expensive parsing every time!
+    return template.Bind([new TextParameter("Name", name)]);
+}
+```

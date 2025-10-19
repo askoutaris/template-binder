@@ -1,72 +1,51 @@
-﻿using System;
-using Microsoft.Extensions.DependencyInjection;
-using TemplateBinder.Binders;
+﻿using Microsoft.Extensions.DependencyInjection;
 using TemplateBinder.Extensions.DependencyInjection;
-using TemplateBinder.Factories;
 using TemplateBinder.Parameters;
-using TemplateBinder.Pipes;
+using TemplateBinder.Services;
 
 namespace Workbench
 {
 	class Program
 	{
-		static void Main(string[] args)
+		static void Main(string[] _)
 		{
-			DependencyInjectionExample();
-			SimpleExample();
-		}
+			// Setup Dependency Injection
+			var services = new ServiceCollection();
+			services.AddTemplateBinder(typeof(AgeGenerationPipe));
 
-		private static void DependencyInjectionExample()
-		{
-			// setup our DI
-			var serviceProvider = new ServiceCollection()
-				.AddTemplateBinder(throwOnMissingParameters: true)
-				.BuildServiceProvider();
+			var serviceProvider = services.BuildServiceProvider();
 
-			// resolve IBinderFactory
-			var binderFactory = serviceProvider.GetService<IBinderFactory>();
-			BindText(binderFactory);
-		}
+			// Resolve ITemplateFactory from DI container
+			var factory = serviceProvider.GetRequiredService<ITemplateFactory>();
 
-		private static void SimpleExample()
-		{
-			var pipeTypes = new Type[] {
-				typeof(BooleanTextPipe),
-				typeof(DatePipe),
-				typeof(DecimalPipe),
-				typeof(TextPipe),
+			var templateStr = @"
+				User Report
+				-----------
+				Name: {{FirstName}} {{LastName}}
+				Born: {{DateOfBirth|datetime:format=yyyy-MM-dd}}
+				Age Generation: {{DateOfBirth|agegeneration}}
+				Login Count: {{LoginTimes}}
+				Balance: ${{AccountBalance|number:format=N2}}
+				Active: {{IsActive|boolean:trueValue=Yes,falseValue=No}}
+				Locked: {{IsLockedOut|boolean:trueValue=Yes,falseValue=No}}
+			";
+
+			var template = factory.Create(templateStr);
+
+			var parameters = new IParameter[] {
+				new TextParameter("FirstName", "David"),
+				new TextParameter("LastName", "Parker"),
+				new DateTimeParameter("DateOfBirth", new DateTime(1980, 08, 15)),
+				new NumberParameter("LoginTimes", 85),
+				new NumberParameter("AccountBalance", 1750.45M),
+				new BooleanParameter("IsActive", true),
+				new BooleanParameter("IsLockedOut", false)
 			};
 
-			IPipeFactory pipeFactory = new PipeFactoryDefault(pipeTypes);
-			IBinderFactory binderFactory = new BinderFactoryDefault(pipeFactory, true);
-			BindText(binderFactory);
-		}
+			var message = template.Bind(parameters);
 
-		private static void BindText(IBinderFactory binderFactory)
-		{
-			var template = @"
-				The user {FirstName} {LastName} 
-				born {DateOfBirth|date:format=o} 
-				has logged in {LoginTimes},
-				has account balance {AccountBalance|decimal:format=N2},
-				is active: {IsActive|booleantext:falseValue=no,trueValue=yes},
-				is locked out: {IsLockedOut|booleantext:falseValue=no,trueValue=yes}";
+			Console.WriteLine(message);
 
-			IBinder binder = binderFactory.Create(template);
-
-			var parameters = new Parameter[] {
-				new Parameter.Text("FirstName", "David"),
-				new Parameter.Text("LastName", "Parker"),
-				new Parameter.Date("DateOfBirth", new DateTime(1980,08,15,12,30,0)),
-				new Parameter.Number("LoginTimes", 85),
-				new Parameter.Number("AccountBalance", 1750.45M),
-				new Parameter.Boolean("IsActive",true),
-				new Parameter.Boolean("IsLockedOut", false)
-			};
-
-			var text = binder.Bind(parameters);
-
-			Console.WriteLine(text);
 			Console.ReadLine();
 		}
 	}

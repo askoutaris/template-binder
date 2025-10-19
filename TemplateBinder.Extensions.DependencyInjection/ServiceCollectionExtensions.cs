@@ -1,42 +1,39 @@
-﻿using System;
-using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
-using TemplateBinder.Factories;
+﻿using Microsoft.Extensions.DependencyInjection;
 using TemplateBinder.Pipes;
+using TemplateBinder.Services;
 
 namespace TemplateBinder.Extensions.DependencyInjection
 {
+	/// <summary>
+	/// Extension methods for configuring TemplateBinder services.
+	/// </summary>
 	public static class ServiceCollectionExtensions
 	{
-		private static readonly Type[] _pipeTypes = new Type[] {
-			typeof(BooleanTextPipe),
-			typeof(DatePipe),
-			typeof(DecimalPipe),
-			typeof(TextPipe),
-		};
-
-		public static IServiceCollection AddTemplateBinder(this IServiceCollection services, bool throwOnMissingParameters)
-			=> services.AddTemplateBinderInternal(_pipeTypes, throwOnMissingParameters);
-
-		public static IServiceCollection AddTemplateBinder(this IServiceCollection services, bool throwOnMissingParameters, Type[] additionalPipeTypes)
+		/// <summary>
+		/// Registers TemplateBinder services with the dependency injection container.
+		/// Includes built-in pipes (NumberPipe, DateTimePipe, BooleanPipe) and optional custom pipes.
+		/// </summary>
+		/// <param name="services">The service collection to add services to.</param>
+		/// <param name="customPipeTypes">Optional custom pipe types to register in addition to built-in pipes.</param>
+		/// <returns>The service collection for chaining.</returns>
+		/// <example>
+		/// services.AddTemplateBinder();
+		/// services.AddTemplateBinder(typeof(MyCustomPipe));
+		/// </example>
+		public static IServiceCollection AddTemplateBinder(this IServiceCollection services, params Type[] customPipeTypes)
 		{
-			var pipeTypes = _pipeTypes
-				.Concat(additionalPipeTypes)
-				.Distinct()
-				.ToArray();
+			Type[] buitInPipeType = [
+				typeof(NumberPipe),
+				typeof(DateTimePipe),
+				typeof(BooleanPipe)
+			];
 
-			return services.AddTemplateBinderInternal(pipeTypes, throwOnMissingParameters);
-		}
+			services.AddSingleton<IPipeActivator>(new PipeActivator([.. buitInPipeType, .. customPipeTypes]));
+			services.AddSingleton<ITemplateTokensFactory, TemplateTokensFactory>();
+			services.AddSingleton<IPlaceholderParser, PlaceholderParser>();
+			services.AddSingleton<ITemplateParser, TemplateParser>();
+			services.AddSingleton<ITemplateFactory, TemplateFactory>();
 
-		private static IServiceCollection AddTemplateBinderInternal(this IServiceCollection services, Type[] pipeTypes, bool throwOnMissingParameters)
-		{
-			services.AddSingleton<IPipeFactory>(new PipeFactoryDefault(pipeTypes));
-			services.AddSingleton<IBinderFactory>(ctx =>
-			{
-				var pipeFactory = ctx.GetRequiredService<IPipeFactory>();
-
-				return new BinderFactoryDefault(pipeFactory, throwOnMissingParameters);
-			});
 			return services;
 		}
 	}

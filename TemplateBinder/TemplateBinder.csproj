@@ -1,20 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
-		<LangVersion>9</LangVersion>
+		<LangVersion>Latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
 		<Authors>Alkiviadis Skoutaris</Authors>
 		<Company>Alkiviadis Skoutaris</Company>
-		<Description>C# angular like text template binder</Description>
+		<Description>A lightweight, Angular-like text template binding library for C# with powerful transformation pipelines. Supports custom pipes, type-safe parameters, and dependency injection.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<RepositoryUrl>https://github.com/askoutaris/template-binder</RepositoryUrl>
-		<Version>2.0.2</Version>
+		<PackageId>TemplateBinder</PackageId>
+		<Version>3.0.0</Version>
+		<PackageReleaseNotes>⚠️ BREAKING CHANGES - Complete architectural rewrite. Not backward compatible with v2.x. See https://github.com/askoutaris/template-binder/blob/main/MIGRATION.md for migration guide. Major changes: Template syntax {{...}}, ITemplate API, struct parameters, .NET 8.0 required. Performance: Token-based architecture with O(1) lookups, FrozenDictionary, readonly structs.</PackageReleaseNotes>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectCapability Include="DynamicDependentFile" />
-		<ProjectCapability Include="DynamicFileNesting" />
+		<None Include="..\README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<InternalsVisibleTo Include="Tests" />
+		<InternalsVisibleTo Include="Workbench" />
+	</ItemGroup>
 </Project>
