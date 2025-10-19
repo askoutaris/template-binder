@@ -2,7 +2,7 @@
 
 namespace TemplateBinder.TemplateTokens
 {
-	interface ITemplateToken
+	public interface ITemplateToken
 	{
 		string GetText(IReadOnlyDictionary<string, IParameter> parameters);
 	}

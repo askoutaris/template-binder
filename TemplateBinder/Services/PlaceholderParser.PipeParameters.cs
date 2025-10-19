@@ -2,7 +2,7 @@
 
 namespace TemplateBinder.Services
 {
-	class PipeParameters
+	public class PipeParameters
 	{
 		public string Name { get; }
 		public NameValueCollection Parameters { get; }

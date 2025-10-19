@@ -1,6 +1,6 @@
 ﻿namespace TemplateBinder.Services
 {
-	class PlaceholderParameters
+	public class PlaceholderParameters
 	{
 		public string ParameterName { get; }
 		public PipeParameters? Pipe { get; }

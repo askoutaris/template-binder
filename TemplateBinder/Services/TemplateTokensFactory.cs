@@ -2,12 +2,12 @@
 
 namespace TemplateBinder.Services
 {
-	interface ITemplateTokensFactory
+	public interface ITemplateTokensFactory
 	{
 		IReadOnlyCollection<ITemplateToken> Create(IReadOnlyCollection<string> stringTokens);
 	}
 
-	class TemplateTokensFactory : ITemplateTokensFactory
+	public class TemplateTokensFactory : ITemplateTokensFactory
 	{
 		private readonly IPlaceholderParser _placeholderParser;
 		private readonly IPipeActivator _pipeActivator;

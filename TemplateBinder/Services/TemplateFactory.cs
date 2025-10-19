@@ -7,7 +7,7 @@ namespace TemplateBinder.Services
 		ITemplate Create(string template);
 	}
 
-	class TemplateFactory : ITemplateFactory
+	public class TemplateFactory : ITemplateFactory
 	{
 		private readonly ITemplateParser _parser;
 		private readonly ITemplateTokensFactory _tokensFactory;

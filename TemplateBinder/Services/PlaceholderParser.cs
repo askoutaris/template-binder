@@ -2,12 +2,12 @@
 
 namespace TemplateBinder.Services
 {
-	interface IPlaceholderParser
+	public interface IPlaceholderParser
 	{
 		PlaceholderParameters Parse(string placeholder);
 	}
 
-	class PlaceholderParser : IPlaceholderParser
+	public class PlaceholderParser : IPlaceholderParser
 	{
 		public PlaceholderParameters Parse(string placeholder)
 		{

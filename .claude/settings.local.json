@@ -5,7 +5,9 @@
       "Bash(dotnet test \"C:\\Users\\askoutaris\\source\\askoutaris\\template-binder\\Tests\\Tests.csproj\")",
       "Bash(dotnet test \"C:\\Users\\askoutaris\\source\\askoutaris\\template-binder\\Tests\\Tests.csproj\" --no-build)",
       "Bash(dotnet build \"C:\\Users\\askoutaris\\source\\askoutaris\\template-binder\\Tests\\Tests.csproj\")",
-      "Bash(dotnet tool install -g dotnet-reportgenerator-globaltool)"
+      "Bash(dotnet tool install -g dotnet-reportgenerator-globaltool)",
+      "Bash(dotnet build \"C:\\Users\\askoutaris\\source\\askoutaris\\template-binder\\Workbench\\Workbench.csproj\")",
+      "Bash(dotnet run --no-build)"
     ],
     "deny": [],
     "ask": []

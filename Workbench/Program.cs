@@ -1,5 +1,6 @@
-﻿using TemplateBinder.Parameters;
-using TemplateBinder.Pipes;
+﻿using Microsoft.Extensions.DependencyInjection;
+using TemplateBinder.Extensions.DependencyInjection;
+using TemplateBinder.Parameters;
 using TemplateBinder.Services;
 
 namespace Workbench
@@ -8,18 +9,14 @@ namespace Workbench
 	{
 		static void Main(string[] _)
 		{
-			Type[] knownPipes = [
-				typeof(NumberPipe),
-				typeof(DateTimePipe),
-				typeof(BooleanPipe),
-				typeof(AgeGenerationPipe),
-			];
+			// Setup Dependency Injection
+			var services = new ServiceCollection();
+			services.AddTemplateBinder(typeof(AgeGenerationPipe));
 
-			var placeholderParser = new PlaceholderParser();
-			var pipeActivator = new PipeActivator(knownPipes);
-			var tokensFactory = new TemplateTokensFactory(placeholderParser, pipeActivator);
-			var parser = new TemplateParser();
-			var factory = new TemplateFactory(parser, tokensFactory);
+			var serviceProvider = services.BuildServiceProvider();
+
+			// Resolve ITemplateFactory from DI container
+			var factory = serviceProvider.GetRequiredService<ITemplateFactory>();
 
 			var templateStr = @"
 				User Report
@@ -50,28 +47,6 @@ namespace Workbench
 			Console.WriteLine(message);
 
 			Console.ReadLine();
-		}
-	}
-
-	[PipeName("agegeneration")]
-	public class AgeGenerationPipe : IPipe
-	{
-		public IParameter Transform(IParameter parameter)
-		{
-			if (parameter is not DateTimeParameter datetime)
-				throw new ArgumentException($"Date pipe can only be use with DateTime parameters. Parameter {parameter.Name} is {parameter.GetType()}");
-
-			var age = DateTime.UtcNow - datetime.Value;
-
-			if (age is null)
-				return new TextParameter(parameter.Name, "Not born yet!");
-
-			var years = age.Value.TotalDays / 365;
-
-			if (years < 22)
-				return new TextParameter(parameter.Name, "Gen Z");
-			else
-				return new TextParameter(parameter.Name, "Millenian");
 		}
 	}
 }

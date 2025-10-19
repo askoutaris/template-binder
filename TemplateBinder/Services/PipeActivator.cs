@@ -6,12 +6,12 @@ using TemplateBinder.Pipes;
 
 namespace TemplateBinder.Services
 {
-	interface IPipeActivator
+	public interface IPipeActivator
 	{
 		IPipe Create(string name, NameValueCollection parameters);
 	}
 
-	class PipeActivator : IPipeActivator
+	public class PipeActivator : IPipeActivator
 	{
 		private readonly FrozenDictionary<string, Type> _pipes;
 
