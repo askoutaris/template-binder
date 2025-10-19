@@ -18,7 +18,11 @@ namespace TemplateBinder.Services
 					.Replace("{{", "")
 					.Replace("}}", "")
 					.Split('|')
+					.Select(p => p.Trim())
 					.ToArray();
+
+				if (parts.Length == 0 || string.IsNullOrWhiteSpace(parts[0]))
+					throw new InvalidOperationException($"Invalid placeholder {placeholder}");
 
 				var parameterName = parts[0];
 
@@ -28,7 +32,7 @@ namespace TemplateBinder.Services
 
 				return new PlaceholderParameters(parameterName, pipeParameters);
 			}
-			catch (Exception ex)
+			catch (Exception ex) when (ex is not InvalidOperationException)
 			{
 				throw new InvalidOperationException($"Invalid placeholder {placeholder}", ex);
 			}

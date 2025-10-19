@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet --version)"
+      "Bash(dotnet --version)",
+      "Bash(dotnet test \"C:\\Users\\askoutaris\\source\\askoutaris\\template-binder\\Tests\\Tests.csproj\")",
+      "Bash(dotnet test \"C:\\Users\\askoutaris\\source\\askoutaris\\template-binder\\Tests\\Tests.csproj\" --no-build)",
+      "Bash(dotnet build \"C:\\Users\\askoutaris\\source\\askoutaris\\template-binder\\Tests\\Tests.csproj\")",
+      "Bash(dotnet tool install -g dotnet-reportgenerator-globaltool)"
     ],
     "deny": [],
     "ask": []
