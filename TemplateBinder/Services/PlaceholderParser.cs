@@ -2,13 +2,30 @@
 
 namespace TemplateBinder.Services
 {
+	/// <summary>
+	/// Parses placeholder strings to extract parameter name and pipe information.
+	/// </summary>
 	public interface IPlaceholderParser
 	{
+		/// <summary>
+		/// Parses a placeholder string like {{Name|pipe:param=value}}.
+		/// </summary>
+		/// <param name="placeholder">The placeholder string including {{ and }}.</param>
+		/// <returns>Parsed parameter name and optional pipe parameters.</returns>
 		PlaceholderParameters Parse(string placeholder);
 	}
 
+	/// <summary>
+	/// Default implementation that parses placeholders by splitting on | and : delimiters.
+	/// </summary>
 	public class PlaceholderParser : IPlaceholderParser
 	{
+		/// <summary>
+		/// Parses a placeholder string into components.
+		/// </summary>
+		/// <param name="placeholder">Placeholder string like {{Name|pipe:param=value}}.</param>
+		/// <returns>Parsed components with parameter name and optional pipe.</returns>
+		/// <exception cref="InvalidOperationException">Thrown when placeholder format is invalid.</exception>
 		public PlaceholderParameters Parse(string placeholder)
 		{
 			try
